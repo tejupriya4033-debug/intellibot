@@ -1,7 +1,9 @@
-import streamlit as st
+import streamlit as st 
 import wikipedia
 import requests
 from bs4 import BeautifulSoup
+from io import BytesIO
+from PIL import Image
 
 # --- CONFIG ---
 st.set_page_config(page_title="🔍 IntelliBot – Smart Search Assistant", layout="wide")
@@ -28,7 +30,15 @@ def google_search(query):
     image_url = f"https://www.google.com/search?q={query}&tbm=isch"
     img_response = requests.get(image_url, headers=headers)
     img_soup = BeautifulSoup(img_response.text, "html.parser")
-    images = [img["src"] for img in img_soup.find_all("img") if "src" in img.attrs][:3]
+
+    valid_images = []
+    for img in img_soup.find_all("img"):
+        if "src" in img.attrs:
+            src = img["src"]
+            if src.startswith("http"):  # keep only absolute URLs
+                valid_images.append(src)
+
+    images = valid_images[:3]
     
     return snippets, images
 
@@ -97,5 +107,9 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
         if "images" in msg and msg["images"]:
-            for img in msg["images"]:
-                st.image(img, width=200)
+            for img_url in msg["images"]:
+                try:
+                    img_data = requests.get(img_url, timeout=5).content
+                    st.image(Image.open(BytesIO(img_data)), width=200)
+                except Exception as e:
+                    st.warning(f"⚠️ Could not load image: {e}")
