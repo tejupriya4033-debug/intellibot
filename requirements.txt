@@ -1,0 +1,9 @@
+streamlit
+wikipedia
+google-search-results
+SpeechRecognition
+streamlit-webrtc
+av
+numpy
+requests
+beautifulsoup4
